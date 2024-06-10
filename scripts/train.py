@@ -1,20 +1,20 @@
 from dataclasses import dataclass
 from pathlib import Path
-from torch.utils.data import DataLoader
-import lightning.pytorch as pl
 
-from lightning.pytorch import seed_everything
-from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
-from crat_classifier.dataset.dataset_utils import collate_fn_dict
-from crat_classifier.model import CratClassifier, ModelConfig, OptimizerConfig
-from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
+import lightning.pytorch as pl
 import tyro
+from crat_classifier.dataset.dataset_utils import collate_fn_dict
+from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
+from crat_classifier.model import CratClassifier, ModelConfig, OptimizerConfig
+from lightning.pytorch import seed_everything
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
+from torch.utils.data import DataLoader
 
 
 @dataclass
 class TrainConfig:
     # model configuration
-    crat: ModelConfig
+    model: ModelConfig
     # optimizer configuration
     optimizer: OptimizerConfig
     # training split
@@ -28,8 +28,6 @@ class TrainConfig:
     # random seed, None for not set
     seed: int | None = None
     # learning rate
-    learning_rate: float = 1e-3
-    # training/valication batch size
     batch_size: int = 64
     # workders for dataloder
     num_workers: int = 8
@@ -64,7 +62,9 @@ def main(configs: TrainConfig):
     checkpoint_callback = ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max")
     lr_monitor_callback = LearningRateMonitor(logging_interval="step")
 
-    model = CratClassifier(model_config=configs.crat, optimizer_config=configs.optimizer)
+    model = CratClassifier(
+        model_config=configs.model, optimizer_config=configs.optimizer
+    )
     # load_checkpoint_path = "ckpts/v2e35.ckpt"
     # model = CratPred.load_from_checkpoint(load_checkpoint_path, args=args, strict=False)
 

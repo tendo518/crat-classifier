@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torch.utils.data import default_collate
 
 
 # use this because we want different size of (N cars) in a batch

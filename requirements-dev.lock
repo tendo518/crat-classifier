@@ -135,6 +135,7 @@ requests==2.32.3
     # via torch-geometric
 rich==13.7.1
     # via tyro
+ruff==0.4.8
 scikit-learn==1.5.0
     # via crat-classifier
     # via torch-geometric

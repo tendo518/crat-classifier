@@ -1,15 +1,14 @@
 from dataclasses import dataclass
 from typing import Literal
-import numpy as np
 
-import torch
-from torch import nn
-from torch.nn import functional as F
 import lightning.pytorch as pl
+import numpy as np
+import torch
+from scipy import sparse
+from torch import nn, optim
+from torch.nn import functional as F
 from torch_geometric.nn import conv
 from torch_geometric.utils import from_scipy_sparse_matrix
-from scipy import sparse
-import torch.optim as optim
 
 
 @dataclass
@@ -31,6 +30,9 @@ class OptimizerConfig:
 class CratClassifier(pl.LightningModule):
     def __init__(self, model_config: ModelConfig, optimizer_config: OptimizerConfig):
         super(CratClassifier, self).__init__()
+
+        self.save_hyperparameters()
+        
         self.config = model_config
         self.optimizer_config = optimizer_config
 
@@ -47,6 +49,7 @@ class CratClassifier(pl.LightningModule):
         )
         self.ce_loss = nn.CrossEntropyLoss()
 
+    
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
             self.parameters(),
