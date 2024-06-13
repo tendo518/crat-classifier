@@ -2,13 +2,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import lightning.pytorch as pl
+import torch
 import tyro
 from crat_classifier.dataset.dataset_utils import collate_fn_dict
 from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
-from crat_classifier.model import CratClassifier, ModelConfig, OptimizerConfig
+from crat_classifier.crat import ModelConfig, OptimizerConfig, TrajClassifier
 from lightning.pytorch import seed_everything
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from torch.utils.data import DataLoader
+
+torch.set_float32_matmul_precision("high")
+torch.backends.cudnn.benchmark = True
 
 
 @dataclass
@@ -62,7 +66,7 @@ def main(configs: TrainConfig):
     checkpoint_callback = ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max")
     lr_monitor_callback = LearningRateMonitor(logging_interval="step")
 
-    model = CratClassifier(
+    model = TrajClassifier(
         model_config=configs.model, optimizer_config=configs.optimizer
     )
     # load_checkpoint_path = "ckpts/v2e35.ckpt"

@@ -1,4 +1,28 @@
+import numpy as np
 import torch
+from numpy.typing import ArrayLike
+
+
+def norm_stack(arr1, arr2):
+    return np.linalg.norm(np.vstack((arr1, arr2)), ord=2, axis=0)
+
+
+def gradient_for_angle(y: ArrayLike, x: ArrayLike):
+    """calculate gradient for periodic angle values
+
+    Args:
+        y (ArrayLike): N d
+        x (ArrayLike): N d
+
+    Returns:
+        NDArray: gradient for given y
+    """
+    y, x = np.array(y), np.array(x)
+    grad1 = np.gradient(y, x)
+    y = (y + 90) % 360
+    grad2 = np.gradient(y, x)
+
+    return np.where(np.abs(grad1) > np.abs(grad2), grad2, grad1)
 
 
 class MetricsAccumulator:

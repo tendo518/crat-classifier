@@ -16,6 +16,7 @@ dependencies = [
     "tyro>=0.8.4",
     "pandas>=2.2.2",
     "numpy>=1.26.4",
+    "pydantic>=2.7.3",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
@@ -37,7 +38,7 @@ packages = ["src/crat_classifier"]
 
 
 [tool.ruff]
-# line-length = 120
+# line-length = 80
 lint.select = [
     "E",   # pycodestyle errors.
     "F",   # Pyflakes rules.

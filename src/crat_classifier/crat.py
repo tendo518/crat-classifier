@@ -5,7 +5,7 @@ import lightning.pytorch as pl
 import numpy as np
 import torch
 from scipy import sparse
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
 from torch_geometric.nn import conv
 from torch_geometric.utils import from_scipy_sparse_matrix
@@ -27,12 +27,12 @@ class OptimizerConfig:
     lr_scheduler: Literal["cosine_anneal"] = "cosine_anneal"
 
 
-class CratClassifier(pl.LightningModule):
+class TrajClassifier(pl.LightningModule):
     def __init__(self, model_config: ModelConfig, optimizer_config: OptimizerConfig):
-        super(CratClassifier, self).__init__()
+        super(TrajClassifier, self).__init__()
 
         self.save_hyperparameters()
-        
+
         self.config = model_config
         self.optimizer_config = optimizer_config
 
@@ -49,17 +49,25 @@ class CratClassifier(pl.LightningModule):
         )
         self.ce_loss = nn.CrossEntropyLoss()
 
-    
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            self.parameters(),
-            lr=self.optimizer_config.learning_rate,
-            weight_decay=self.optimizer_config.weight_decay,
-        )
+        if self.optimizer_config.optimizer == "adam":
+            optimizer = torch.optim.Adam(
+                self.parameters(),
+                lr=self.optimizer_config.learning_rate,
+                weight_decay=self.optimizer_config.weight_decay,
+            )
+        elif self.optimizer_config.optimizer == "adamw":
+            optimizer = torch.optim.AdamW(
+                self.parameters(),
+                lr=self.optimizer_config.learning_rate,
+                weight_decay=self.optimizer_config.weight_decay,
+            )
+        else:
+            raise NotImplementedError
 
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
-            optimizer=optimizer, T_max=self.trainer.max_epochs // 4
-        )
+        # scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        #     optimizer=optimizer, T_max=self.trainer.max_epochs // 4
+        # )
 
         return {
             "optimizer": optimizer,

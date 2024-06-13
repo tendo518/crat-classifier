@@ -10,7 +10,7 @@ from crat_classifier.dataset.suscape_csv_dataset import (
     num_classes,
     suscape_id2class,
 )
-from crat_classifier.model import CratClassifier, ModelConfig, OptimizerConfig
+from crat_classifier.crat import ModelConfig, OptimizerConfig, TrajClassifier
 from crat_classifier.utils import MetricsAccumulator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -56,7 +56,7 @@ def main(configs: TestConfig):
     )
 
     # Load model with weights
-    model = CratClassifier.load_from_checkpoint(
+    model = TrajClassifier.load_from_checkpoint(
         checkpoint_path=configs.ckpt_path,
         # model_config=configs.crat,
         # optimizer_config=configs.optimizer,
