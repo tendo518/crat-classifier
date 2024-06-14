@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 import torch.utils.data
 
+suscape_hints2id = {""}
 suscape_class2id = {
     "1.1 InLane": 0,
     "1.2 ChangingLaneLeft": 1,
@@ -80,31 +81,19 @@ class CSVDataset(torch.utils.data.Dataset):
         return np.float32(res), data[:, -1, :2]
 
     def extract_data(self, filename, cls_filename):
-        """Load csv and extract the features required for CRAT-Pred
-
-        Args:
-            filename: Filename of the csv to load
-
-        Returns:
-            Feature dictionary required for CRAT-Pred
-        """
-        # df = _read_csv(filename)
         df = pd.read_csv(filename)
         df_classes = pd.read_csv(cls_filename)
         argo_id = int(Path(filename).stem)
 
         city = df["CITY_NAME"].values[0]
 
-        agt_ts = np.sort(np.unique(df["TIMESTAMP"].values))
-        mapping = dict()
-        for i, ts in enumerate(agt_ts):
-            mapping[ts] = i
+        timestamps = np.sort(np.unique(df["TIMESTAMP"]))
 
-        trajs = np.concatenate(
-            (df.X.to_numpy().reshape(-1, 1), df.Y.to_numpy().reshape(-1, 1)), 1
-        )
+        ts2indx = {ts: i for i, ts in enumerate(timestamps)}
 
-        steps = [mapping[x] for x in df["TIMESTAMP"].values]
+        trajs = np.stack((df.X.to_numpy(), df.Y.to_numpy()), axis=-1)
+
+        steps = [ts2indx[x] for x in df["TIMESTAMP"].values]
         steps = np.asarray(steps, np.int64)
 
         objs = df.groupby(["TRACK_ID", "OBJECT_TYPE"]).groups
@@ -166,6 +155,7 @@ class CSVDataset(torch.utils.data.Dataset):
         )
         # print("gt: ", sample["gt"])
 
+        # TODO mark invalid as negative sample, loss should not be calculated from those value
         sample["displ"], sample["centers"] = self.get_displ(res_trajs)
         # sample["origin"] = origin
         # We already return the inverse transformation matrix

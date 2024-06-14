@@ -1,26 +1,59 @@
+from dataclasses import dataclass
+
+import lightning.pytorch as pl
 import torch
 from torch import nn
 from torch.nn import functional as F
-import lightning.pytorch as pl
-class Seq2SeqClassifier(pl.LightningModule):
-    def __init__(self, *args: torch.Any, **kwargs: torch.Any) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.encoder = EncoderRNN()
-        self.decoder = DecoderRNN()
 
 
-    def forward(self, input):
-        encoder_out = self.encoder(input)
+class EncoderDecoderClassifier(pl.LightningModule):
+    @dataclass
+    class ModelConfig:
+        latent_size: int = 64
+        num_class: int = 20
+        num_preds: int = 40
+        dp_ratio: float = 0.3
+
+    def __init__(self, config: ModelConfig):
+        super(EncoderDecoderClassifier, self).__init__()
+
+        self.save_hyperparameters()
+
+        self.encoder = EncoderRNN(
+            3, hidden_size=config.latent_size, dropout_p=config.dp_ratio
+        )
+        self.decoder = DecoderRNN(
+            hidden_size=config.latent_size, output_size=config.num_class
+        )
+
+        self.loss = nn.CrossEntropyLoss()
+
+    def forward(self, batch):
+        displ, centers = batch["displ"], batch["centers"]
+
+        # rotation, origin = batch["rotation"], batch["origin"]
+
+        # Extract the number of agents in each sample of the current batch
+        agents_per_sample = [x.shape[0] for x in displ]
+
+        # Convert the list of tensors to tensors
+        displ = torch.cat(displ, dim=0).to(
+            device=self.device
+        )  # (N*agents_per_sample) 39 3
+        centers = torch.cat(centers, dim=0).to(
+            device=self.device
+        )  # (N*agents_per_sample) 3
+
+        encoder_out = self.encoder(displ)
         self.decoder.init_state(encoder_out)
-        decoder_out = self.decoder(encoder_out, )
+        decoder_out = self.decoder(encoder_out)
+        return decoder_out
 
-    def training_step(self, *args: torch.Any, **kwargs: torch.Any) -> torch.Tensor | Mapping[str, Any] | None:
-        return super().training_step(*args, **kwargs)
-    
-    def validation_step(self, *args: torch.Any, **kwargs: torch.Any) -> torch.Tensor | Mapping[str, Any] | None:
-        return super().validation_step(*args, **kwargs)
-    
+    def training_step(self):
+        pass
+
+    def validation_step(self):
+        pass
 
 
 class EncoderRNN(nn.Module):
@@ -38,7 +71,6 @@ class EncoderRNN(nn.Module):
 class DecoderRNN(nn.Module):
     def __init__(self, hidden_size, output_size):
         super(DecoderRNN, self).__init__()
-        self.embedding = nn.Embedding(output_size, hidden_size)
         self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
         self.out = nn.Linear(hidden_size, output_size)
 

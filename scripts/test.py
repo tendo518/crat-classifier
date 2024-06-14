@@ -10,7 +10,7 @@ from crat_classifier.dataset.suscape_csv_dataset import (
     num_classes,
     suscape_id2class,
 )
-from crat_classifier.crat import ModelConfig, OptimizerConfig, TrajClassifier
+from crat_classifier.trainer import Classifier
 from crat_classifier.utils import MetricsAccumulator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -18,30 +18,28 @@ from tqdm import tqdm
 
 @dataclass
 class TestConfig:
-    # model configuration
-    crat: ModelConfig
-    # optimizer configuration
-    optimizer: OptimizerConfig
-    # val split
+    """test configuration"""
+
     test_split: Path = Path("data/suscape/val")
-    # ckeckpoint path
+    # val split
     ckpt_path: Path = Path(
         "output/lightning_logs/version_17/checkpoints/epoch=19-step=180.ckpt"
     )
-    # output root dir
+    # ckeckpoint path
     output_root: Path = Path("output")
-    # training epochs
+    # output root dir
     num_epochs: int = 1500
-    # random seed, None for not set
+    # training epochs
     seed: int | None = None
-    # learning rate
+    # random seed, None for not set
     learning_rate: float = 1e-3
-    # training/valication batch size
+    # learning rate
     batch_size: int = 64
-    # workders for dataloder
+    # training/valication batch size
     num_workers: int = 8
-    # gpu to use
+    # workders for dataloder
     gpu: bool = True
+    # gpu to use
 
 
 def main(configs: TestConfig):
@@ -56,7 +54,7 @@ def main(configs: TestConfig):
     )
 
     # Load model with weights
-    model = TrajClassifier.load_from_checkpoint(
+    model = Classifier.load_from_checkpoint(
         checkpoint_path=configs.ckpt_path,
         # model_config=configs.crat,
         # optimizer_config=configs.optimizer,

@@ -1,12 +1,10 @@
-from dataclasses import dataclass
-from pathlib import Path
-
 import lightning.pytorch as pl
 import torch
 import tyro
+from crat_classifier.configs import Config
 from crat_classifier.dataset.dataset_utils import collate_fn_dict
 from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
-from crat_classifier.crat import ModelConfig, OptimizerConfig, TrajClassifier
+from crat_classifier.trainer import Classifier
 from lightning.pytorch import seed_everything
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from torch.utils.data import DataLoader
@@ -15,49 +13,25 @@ torch.set_float32_matmul_precision("high")
 torch.backends.cudnn.benchmark = True
 
 
-@dataclass
-class TrainConfig:
-    # model configuration
-    model: ModelConfig
-    # optimizer configuration
-    optimizer: OptimizerConfig
-    # training split
-    train_split: Path = Path("data/suscape/train")
-    # val split
-    val_split: Path = Path("data/suscape/val")
-    # output root dir
-    output_root: Path = Path("output")
-    # training epochs
-    num_epochs: int = 1500
-    # random seed, None for not set
-    seed: int | None = None
-    # learning rate
-    batch_size: int = 64
-    # workders for dataloder
-    num_workers: int = 8
-    # gpu to use
-    gpus: int = 1
+def main(configs: Config):
+    if configs.experiment.seed is not None:
+        seed_everything(configs.experiment.seed)
 
-
-def main(configs: TrainConfig):
-    if configs.seed is not None:
-        seed_everything(configs.seed)
-
-    train_dataset = CSVDataset(configs.train_split, configs)
+    train_dataset = CSVDataset(configs.experiment.train_split, configs)
     train_loader = DataLoader(
         train_dataset,
-        batch_size=configs.batch_size,
-        num_workers=configs.num_workers,
+        batch_size=configs.experiment.batch_size,
+        num_workers=configs.experiment.num_workers,
         collate_fn=collate_fn_dict,
         pin_memory=True,
         drop_last=True,
         shuffle=True,
     )
-    val_dataset = CSVDataset(configs.val_split, configs)
+    val_dataset = CSVDataset(configs.experiment.val_split, configs)
     val_loader = DataLoader(
         val_dataset,
-        batch_size=configs.batch_size,
-        num_workers=configs.num_workers,
+        batch_size=configs.experiment.batch_size,
+        num_workers=configs.experiment.num_workers,
         collate_fn=collate_fn_dict,
         drop_last=True,
         pin_memory=True,
@@ -66,18 +40,14 @@ def main(configs: TrainConfig):
     checkpoint_callback = ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max")
     lr_monitor_callback = LearningRateMonitor(logging_interval="step")
 
-    model = TrajClassifier(
-        model_config=configs.model, optimizer_config=configs.optimizer
-    )
-    # load_checkpoint_path = "ckpts/v2e35.ckpt"
-    # model = CratPred.load_from_checkpoint(load_checkpoint_path, args=args, strict=False)
+    model = Classifier(configs.model, configs.optimizer)
 
     trainer = pl.Trainer(
-        default_root_dir=configs.output_root,
+        default_root_dir=configs.experiment.output_root,
         callbacks=[checkpoint_callback, lr_monitor_callback],
         accelerator="gpu",
-        devices=configs.gpus,
-        max_epochs=configs.num_epochs,
+        devices=configs.experiment.gpus,
+        max_epochs=configs.experiment.num_epochs,
         log_every_n_steps=5,
         check_val_every_n_epoch=5,
     )
@@ -86,4 +56,4 @@ def main(configs: TrainConfig):
 
 
 if __name__ == "__main__":
-    main(tyro.cli(TrainConfig))
+    main(tyro.cli(Config))
