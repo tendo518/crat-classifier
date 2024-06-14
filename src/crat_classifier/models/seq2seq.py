@@ -17,8 +17,6 @@ class EncoderDecoderClassifier(pl.LightningModule):
     def __init__(self, config: ModelConfig):
         super(EncoderDecoderClassifier, self).__init__()
 
-        self.save_hyperparameters()
-
         self.encoder = EncoderRNN(
             3, hidden_size=config.latent_size, dropout_p=config.dp_ratio
         )
