@@ -19,7 +19,7 @@ class ModelConfig:
 
 @dataclass
 class OptimizerConfig:
-    learning_rate: float = 1e-4
+    learning_rate: float = 5e-5
     weight_decay: float = 1e-3
     optimizer: Literal["adam", "adamw"] = "adam"
     lr_scheduler: Literal["cosine_anneal"] = "cosine_anneal"

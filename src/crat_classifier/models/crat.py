@@ -9,13 +9,13 @@ from torch.nn import functional as F
 from torch_geometric.nn import conv
 from torch_geometric.utils import from_scipy_sparse_matrix
 
+from .base_model import BaseModelConfig
+
 
 class CratTrajClassifier(pl.LightningModule):
     @dataclass
-    class ModelConfig:
+    class ModelConfig(BaseModelConfig):
         latent_size: int = 64
-        num_class: int = 20
-        num_preds: int = 40
         dp_ratio: float = 0.3
 
     def __init__(self, model_config: ModelConfig):
@@ -31,7 +31,7 @@ class CratTrajClassifier(pl.LightningModule):
         self.classifier = ClassificationNet(
             self.config.latent_size,
             self.config.num_preds,
-            self.config.num_class,
+            self.config.num_classes,
             self.config.dp_ratio,
         )
         self.ce_loss = nn.CrossEntropyLoss()
@@ -59,7 +59,7 @@ class CratTrajClassifier(pl.LightningModule):
 
 
 class EncoderLstm(nn.Module):
-    def __init__(self, latent_size, input_size=3, num_layers=1):
+    def __init__(self, latent_size, input_size=4, num_layers=1):
         super(EncoderLstm, self).__init__()
         self.input_size = input_size
         self.hidden_size = latent_size
@@ -102,8 +102,8 @@ class AgentGnn(nn.Module):
         super(AgentGnn, self).__init__()
         self.latent_size = latent_size
 
-        self.gcn1 = conv.CGConv(self.latent_size, dim=2, batch_norm=True)
-        self.gcn2 = conv.CGConv(self.latent_size, dim=2, batch_norm=True)
+        self.gcn1 = conv.CGConv(self.latent_size, dim=2, batch_norm=True, bias=False)
+        self.gcn2 = conv.CGConv(self.latent_size, dim=2, batch_norm=True, bias=False)
 
     def forward(self, gnn_in, centers, agents_per_sample):
         # gnn_in is a batch and has the shape (batch_size, number_of_agents, latent_size)

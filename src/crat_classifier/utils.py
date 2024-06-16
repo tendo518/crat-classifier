@@ -33,12 +33,23 @@ class MetricsAccumulator:
         self.false_positives = torch.zeros(num_classes)
         self.true_counts = torch.zeros(num_classes)
 
-    def update(self, predicted: torch.Tensor, targets: torch.Tensor):
+    def update(
+        self,
+        predicted: torch.Tensor,
+        targets: torch.Tensor,
+        valid_mask: torch.Tensor | None = None,
+    ):
+        if valid_mask is not None:
+            predicted = predicted[valid_mask]
+            targets = predicted[valid_mask]
         for i in range(targets.size(0)):
             true_label = targets[i]
             predicted_label = predicted[i]
-            mask = true_label != self.ignore_class
-            true_label, predicted_label = true_label[mask], predicted_label[mask]
+            ignore_mask = true_label != self.ignore_class
+            true_label, predicted_label = (
+                true_label[ignore_mask],
+                predicted_label[ignore_mask],
+            )
 
             self.true_positives[predicted_label] += predicted_label == true_label
             self.false_positives[predicted_label] += predicted_label != true_label

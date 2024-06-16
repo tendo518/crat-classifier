@@ -5,12 +5,13 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from crat_classifier.models.base_model import BaseModelConfig
+
 
 class EncoderDecoderClassifier(pl.LightningModule):
     @dataclass
-    class ModelConfig:
+    class ModelConfig(BaseModelConfig):
         latent_size: int = 64
-        num_class: int = 20
         num_preds: int = 40
         dp_ratio: float = 0.3
 
@@ -18,10 +19,10 @@ class EncoderDecoderClassifier(pl.LightningModule):
         super(EncoderDecoderClassifier, self).__init__()
 
         self.encoder = EncoderRNN(
-            3, hidden_size=config.latent_size, dropout_p=config.dp_ratio
+            4, hidden_size=config.latent_size, dropout_p=config.dp_ratio
         )
         self.decoder = DecoderRNN(
-            hidden_size=config.latent_size, output_size=config.num_class
+            hidden_size=config.latent_size, output_size=config.num_classes
         )
 
         self.loss = nn.CrossEntropyLoss()

@@ -9,6 +9,7 @@ model_dict = {
 }
 
 
-def get_model(config):
-    model_cls = model_dict[config.model_name]
-    return model_cls(config=config.__getattribute__(config.model_name))
+def build_model(config):
+    return model_dict[config.model_name](
+        config=config.__getattribute__(config.model_name),
+    )

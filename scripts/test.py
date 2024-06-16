@@ -7,8 +7,8 @@ import tyro
 from crat_classifier.dataset.dataset_utils import collate_fn_dict
 from crat_classifier.dataset.suscape_csv_dataset import (
     CSVDataset,
-    num_classes,
     suscape_id2class,
+    suscape_num_valid_classes,
 )
 from crat_classifier.trainer import Classifier
 from crat_classifier.utils import MetricsAccumulator
@@ -64,16 +64,21 @@ def main(configs: TestConfig):
         model.cuda()
     model.eval()
 
-    metric_accul = MetricsAccumulator(num_classes)
+    metric_accul = MetricsAccumulator(suscape_num_valid_classes + 1)
 
     with torch.no_grad():
-        for batch_index, batch in tqdm(enumerate(data_loader)):
+        for _, batch in tqdm(enumerate(data_loader)):
             batched_out = model.forward(batch)
 
             batched_classes = F.softmax(batched_out, dim=-1).argmax(dim=-1).cpu()
             batched_gts = torch.stack(batch["gt"], dim=0).cpu()
+            batched_valid_mask = torch.stack(batch["valid_mask"], dim=0).cpu()
 
-            metric_accul.update(batched_classes, batched_gts)
+            metric_accul.update(
+                predicted=batched_classes,
+                targets=batched_gts,
+                valid_mask=batched_valid_mask,
+            )
 
     metric_accul.calculate_metrics(suscape_id2class)
 

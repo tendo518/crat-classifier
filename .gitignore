@@ -1,6 +1,7 @@
 .pixi
 data
 output
+output_*
 ckpts
 .vscode
 .python-version
