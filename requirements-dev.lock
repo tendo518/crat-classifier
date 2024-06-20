@@ -24,10 +24,16 @@ certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
+contourpy==1.2.1
+    # via matplotlib
+cycler==0.12.1
+    # via matplotlib
 docstring-parser==0.16
     # via tyro
 filelock==3.14.0
     # via torch
+fonttools==4.53.0
+    # via matplotlib
 frozenlist==1.4.1
     # via aiohttp
     # via aiosignal
@@ -46,6 +52,8 @@ jinja2==3.1.4
     # via torch-geometric
 joblib==1.4.2
     # via scikit-learn
+kiwisolver==1.4.5
+    # via matplotlib
 lightning==2.2.5
     # via crat-classifier
 lightning-utilities==0.11.2
@@ -59,6 +67,9 @@ markdown-it-py==3.0.0
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
+matplotlib==3.9.0
+    # via crat-classifier
+    # via seaborn
 mdurl==0.1.2
     # via markdown-it-py
 mpmath==1.3.0
@@ -69,12 +80,15 @@ multidict==6.0.5
 networkx==3.3
     # via torch
 numpy==1.26.4
+    # via contourpy
     # via crat-classifier
     # via lightning
+    # via matplotlib
     # via pandas
     # via pytorch-lightning
     # via scikit-learn
     # via scipy
+    # via seaborn
     # via tensorboard
     # via torch-geometric
     # via torchmetrics
@@ -110,11 +124,14 @@ nvidia-nvtx-cu12==12.1.105
 packaging==24.0
     # via lightning
     # via lightning-utilities
+    # via matplotlib
     # via pytorch-lightning
     # via torchmetrics
 pandas==2.2.2
     # via crat-classifier
+    # via seaborn
 pillow==10.3.0
+    # via matplotlib
     # via torchvision
 protobuf==4.25.3
     # via tensorboard
@@ -127,8 +144,16 @@ pydantic-core==2.18.4
 pygments==2.18.0
     # via rich
 pyparsing==3.1.2
+    # via matplotlib
     # via torch-geometric
+pyqt6==6.7.0
+    # via crat-classifier
+pyqt6-qt6==6.7.1
+    # via pyqt6
+pyqt6-sip==13.6.0
+    # via pyqt6
 python-dateutil==2.9.0.post0
+    # via matplotlib
     # via pandas
 pytorch-lightning==2.2.5
     # via lightning
@@ -149,6 +174,8 @@ scipy==1.13.1
     # via crat-classifier
     # via scikit-learn
     # via torch-geometric
+seaborn==0.13.2
+    # via crat-classifier
 setuptools==70.0.0
     # via lightning-utilities
     # via tensorboard

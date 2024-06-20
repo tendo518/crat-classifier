@@ -62,7 +62,11 @@ def main(configs: TestConfig):
         model.cuda()
     model.eval()
 
-    metric_accul = MetricsAccumulator(suscape_num_valid_classes + 1)
+    metric_accul = MetricsAccumulator(
+        num_classes=len(suscape_id2class),
+        ignore_class=None,
+        class_mapping=suscape_id2class,
+    )
 
     with torch.no_grad():
         for _, batch in tqdm(enumerate(data_loader)):
@@ -78,7 +82,12 @@ def main(configs: TestConfig):
                 valid_mask=batched_valid_mask,
             )
 
-    metric_accul.calculate_metrics(suscape_id2class)
+    metrics = metric_accul.calculate_metrics()
+
+    for cls, metric in metrics.items():
+        metric_str = [f"{metric_name}: {value:.4f}" for metric_name, value in metric.items()]
+        print(f"{cls}\n\t{" ".join(metric_str)}")
+    metric_accul.visualize_confusion_matrix()
 
 
 if __name__ == "__main__":
