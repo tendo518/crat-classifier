@@ -28,12 +28,8 @@ class TestConfig:
     # ckeckpoint path
     output_root: Path = Path("output")
     # output root dir
-    num_epochs: int = 1500
-    # training epochs
     seed: int | None = None
     # random seed, None for not set
-    learning_rate: float = 1e-3
-    # learning rate
     batch_size: int = 64
     # training/valication batch size
     num_workers: int = 8
@@ -51,11 +47,13 @@ def main(configs: TestConfig):
         collate_fn=collate_fn_dict,
         shuffle=False,
         pin_memory=True,
+        drop_last=False,
     )
 
     # Load model with weights
     model = Classifier.load_from_checkpoint(
         checkpoint_path=configs.ckpt_path,
+        map_location="cpu",
         # model_config=configs.crat,
         # optimizer_config=configs.optimizer,
     )

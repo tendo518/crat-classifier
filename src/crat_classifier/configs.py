@@ -19,10 +19,10 @@ class ModelConfig:
 
 @dataclass
 class OptimizerConfig:
-    learning_rate: float = 5e-5
+    learning_rate: float = 5e-4
     weight_decay: float = 1e-3
     optimizer: Literal["adam", "adamw"] = "adam"
-    lr_scheduler: Literal["cosine_anneal"] = "cosine_anneal"
+    lr_scheduler: Literal["cosine_anneal", "none"] = "cosine_anneal"
 
 
 @dataclass
@@ -34,8 +34,10 @@ class ExperimentConfig:
     val_split: Path = Path("data/suscape/val")
     # val split
     output_root: Path = Path("output")
+    # use early stop
+    early_stop: bool = False
     # output root dir
-    num_epochs: int = 1000
+    num_epochs: int = 5000
     # training epochs
     seed: int | None = None
     # random seed, None for not set

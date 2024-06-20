@@ -6,7 +6,11 @@ from crat_classifier.dataset.dataset_utils import collate_fn_dict
 from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
 from crat_classifier.trainer import Classifier
 from lightning.pytorch import seed_everything
-from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
+from lightning.pytorch.callbacks import (
+    LearningRateMonitor,
+    ModelCheckpoint,
+    EarlyStopping,
+)
 from torch.utils.data import DataLoader
 
 torch.set_float32_matmul_precision("high")
@@ -37,14 +41,16 @@ def main(configs: Config):
         pin_memory=True,
     )
 
-    checkpoint_callback = ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max")
-    lr_monitor_callback = LearningRateMonitor(logging_interval="step")
+    callbacks = []
+    callbacks.append(ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max"))
+    callbacks.append(LearningRateMonitor(logging_interval="step"))
+    if configs.experiment.early_stop:
+        callbacks.append(EarlyStopping(monitor="val/acc", mode="max", patience=50))
 
     model = Classifier(configs.model, configs.optimizer)
-
     trainer = pl.Trainer(
         default_root_dir=configs.experiment.output_root,
-        callbacks=[checkpoint_callback, lr_monitor_callback],
+        callbacks=callbacks,
         accelerator="gpu",
         devices=configs.experiment.gpus,
         max_epochs=configs.experiment.num_epochs,

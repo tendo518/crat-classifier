@@ -21,30 +21,34 @@ class Classifier(pl.LightningModule):
         # self.loss = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
+        optim_dict = {}
         if self.optimizer_config.optimizer == "adam":
             optimizer = torch.optim.Adam(
                 self.parameters(),
                 lr=self.optimizer_config.learning_rate,
                 weight_decay=self.optimizer_config.weight_decay,
             )
+            optim_dict["optimizer"] = optimizer
+
         elif self.optimizer_config.optimizer == "adamw":
             optimizer = torch.optim.AdamW(
                 self.parameters(),
                 lr=self.optimizer_config.learning_rate,
                 weight_decay=self.optimizer_config.weight_decay,
             )
+            optim_dict["optimizer"] = optimizer
+
         else:
             raise NotImplementedError
 
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
-            optimizer=optimizer,
-            T_max=self.trainer.max_epochs // 4,  # type: ignore
-        )
+        if self.optimizer_config.lr_scheduler == "cosine_anneal":
+            scheduler = optim.lr_scheduler.CosineAnnealingLR(
+                optimizer=optimizer,
+                T_max=self.trainer.max_epochs // 4,  # type: ignore
+            )
+            optim_dict["lr_scheduler"] = {"scheduler": scheduler, "interval": "epoch"}
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {"scheduler": scheduler, "interval": "epoch"},
-        }
+        return optim_dict
 
     def forward(self, batch):
         return self.model(batch)
@@ -107,14 +111,23 @@ class Classifier(pl.LightningModule):
             batch_size=batch_size,
         )
         self.log(
-            "val/whatevereverthingisinlane",
+            "val/acc_ifallpredictisinlane",
             torch.mean((masked_gts == 0).float()),
             on_epoch=True,
             batch_size=batch_size,
         )
         self.log(
-            "val/allyouneedisinlane",
+            "val/inlaneinpredict",
             torch.mean((masked_preds == 0).float()),
+            on_epoch=True,
+            batch_size=batch_size,
+        )
+
+        self.log(
+            "val/acc_exceptinlane",
+            torch.mean(
+                (masked_gts[masked_gts != 0] == masked_preds[masked_gts != 0]).float()
+            ),
             on_epoch=True,
             batch_size=batch_size,
         )
