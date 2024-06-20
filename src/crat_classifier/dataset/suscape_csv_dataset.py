@@ -6,15 +6,17 @@ import pandas as pd
 import torch
 import torch.utils.data
 
+suscape_hints_classes = ["1.GoStraight", "2. Crossing"]
+suscape_hints2id = {k: v for v, k in enumerate(suscape_hints_classes)}
 suscape_classes = [
-    # "1.1 InLane",
-    # "1.2 ChangingLaneLeft",
-    # "1.3 ChangingLaneRight",
-    # "1.4 ChangingTurnLeft",
-    # "1.5 ChangingTurnRight",
-    # "1.6 ChangingStop",
-    # "1.8 Avoidance",
-    # "1.9 RidingLane",
+    "1.1 InLane",
+    "1.2 ChangingLaneLeft",
+    "1.3 ChangingLaneRight",
+    "1.4 ChangingTurnLeft",
+    "1.5 ChangingTurnRight",
+    "1.6 ChangingStop",
+    "1.8 Avoidance",
+    "1.9 RidingLane",
     "2.1 StopAndWait",
     "2.2 Starting",
     "2.4 GoStraight",
@@ -28,9 +30,7 @@ suscape_classes = [
     # "4.3 Driving",
 ]
 suscape_class2id = {k: v for v, k in enumerate(suscape_classes)}
-
 suscape_num_valid_classes = len(suscape_class2id)
-
 
 # NOTE negative label (for non-labeled and not used labels)
 suscape_invalid_class = "9.9 Invalid"
@@ -138,7 +138,7 @@ class CSVDataset(torch.utils.data.Dataset):
         # res_trajs[:, :, :2] = np.dot(res_trajs[:, :, :2] - origin, rotation)
         # all_trajs[np.where(all_trajs[:, :, 2] == 0)] = 0
         displ = self.get_displ(all_trajs.copy())
-        
+        center = all_trajs[:, -1, :2]
         classes = df_classes["second_class"].to_numpy()
         class_labels = np.array(
             [
@@ -152,6 +152,17 @@ class CSVDataset(torch.utils.data.Dataset):
         )
         valid_mask = class_labels != suscape_class2id[suscape_invalid_class]
 
+        hint = np.array(
+            [
+                (
+                    suscape_hints2id[hint_cls]
+                    if hint_cls in suscape_hints2id.keys()
+                    else 2
+                )
+                for hint_cls in df_classes["first_class"].to_numpy()
+            ]
+        )
+
         return {
             "csv_path": csv_path,
             "label_file": label_path,
@@ -160,6 +171,7 @@ class CSVDataset(torch.utils.data.Dataset):
             "gt": class_labels,
             "displ": displ,
             "traj": all_trajs,
-            "centers": np.zeros_like(valid_mask),
+            "hint": hint,
+            "centers": center,
             "valid_mask": valid_mask,
         }

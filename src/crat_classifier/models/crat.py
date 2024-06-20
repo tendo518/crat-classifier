@@ -18,10 +18,10 @@ class CratTrajClassifier(pl.LightningModule):
         latent_size: int = 64
         dp_ratio: float = 0.3
 
-    def __init__(self, model_config: ModelConfig):
+    def __init__(self, config: ModelConfig):
         super(CratTrajClassifier, self).__init__()
 
-        self.config = model_config
+        self.config = config
 
         self.encoder_lstm = EncoderLstm(self.config.latent_size)
         self.agent_gnn = AgentGnn(self.config.latent_size)
