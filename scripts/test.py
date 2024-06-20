@@ -85,7 +85,9 @@ def main(configs: TestConfig):
     metrics = metric_accul.calculate_metrics()
 
     for cls, metric in metrics.items():
-        metric_str = [f"{metric_name}: {value:.4f}" for metric_name, value in metric.items()]
+        metric_str = [
+            f"{metric_name}: {value:.4f}" for metric_name, value in metric.items()
+        ]
         print(f"{cls}\n\t{" ".join(metric_str)}")
     metric_accul.visualize_confusion_matrix()
 
