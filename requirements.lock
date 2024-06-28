@@ -47,6 +47,8 @@ grpcio==1.64.1
 idna==3.7
     # via requests
     # via yarl
+iterative-stratification==0.1.7
+    # via crat-classifier
 jinja2==3.1.4
     # via torch
     # via torch-geometric
@@ -82,6 +84,7 @@ networkx==3.3
 numpy==1.26.4
     # via contourpy
     # via crat-classifier
+    # via iterative-stratification
     # via lightning
     # via matplotlib
     # via pandas
@@ -168,9 +171,11 @@ rich==13.7.1
     # via tyro
 scikit-learn==1.5.0
     # via crat-classifier
+    # via iterative-stratification
     # via torch-geometric
 scipy==1.13.1
     # via crat-classifier
+    # via iterative-stratification
     # via scikit-learn
     # via torch-geometric
 seaborn==0.13.2
