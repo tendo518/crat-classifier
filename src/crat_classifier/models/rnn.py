@@ -36,8 +36,9 @@ class RNNClassifier(pl.LightningModule):
         hint = batch["hint"]
         agents_per_sample = [x.shape[0] for x in displ]
 
-        hint = torch.stack(hint, dim=0)
-        ego_displ = torch.stack([x[0] for x in displ], dim=0)
+        hint = torch.stack(hint, dim=0).to(device=self.device)
+        ego_displ = torch.stack([x[0] for x in displ], dim=0).to(device=self.device)
+        
         ego_displ_forward = torch.concat(
             (
                 torch.zeros((ego_displ.shape[0], 1, 4), device=self.device),
