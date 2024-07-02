@@ -8,7 +8,6 @@ from crat_classifier.dataset.dataset_utils import collate_fn_dict
 from crat_classifier.dataset.suscape_csv_dataset import (
     CSVDataset,
     suscape_id2class,
-    suscape_num_valid_classes,
 )
 from crat_classifier.trainer import Classifier
 from crat_classifier.utils import MetricsAccumulator
@@ -64,7 +63,6 @@ def main(configs: TestConfig):
 
     metric_accul = MetricsAccumulator(
         num_classes=len(suscape_id2class),
-        ignore_class=None,
         class_mapping=suscape_id2class,
     )
 
