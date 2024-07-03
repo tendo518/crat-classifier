@@ -37,11 +37,9 @@ class MetricsAccumulator:
         class_mapping: Optional[dict] = None,
     ):
         self.num_classes = num_classes
-        self.class_mapping = class_mapping
-
-        if class_mapping is not None:
-            assert self.num_classes == len(class_mapping)
-
+        self.class_mapping = (
+            class_mapping if class_mapping is not None else dict(range(num_classes))
+        )
         self.confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.int64)
 
     def update(
@@ -53,76 +51,52 @@ class MetricsAccumulator:
         if valid_mask is not None:
             predicted = predicted[valid_mask]
             targets = targets[valid_mask]
-        else:
-            predicted = predicted.view(-1)
-            targets = targets.view(-1)
-        for true_label, predicted_label in zip(targets, predicted):
-            true_label = int(true_label.item())
-            predicted_label = int(predicted_label.item())
-            self.confusion_matrix[predicted_label][true_label] += 1
+        self.confusion_matrix += np.bincount(
+            (targets.numpy() * self.num_classes + predicted.numpy()).flatten(),
+            minlength=self.confusion_matrix.size,
+        ).reshape(self.num_classes, -1)
 
-    def calculate_metrics(self):
-        """return accuracy, recall, f1 metrics for each class"""
+    def calculate_metrics(self) -> dict[int, dict]:
+        # TP, FP, FN, TN = np.zeros((4, self.num_classes))
+        TP = np.diag(self.confusion_matrix)
+        FP = self.confusion_matrix.sum(axis=0) - TP
+        FN = self.confusion_matrix.sum(axis=1) - TP
+
+        with np.errstate(divide="ignore"):
+            precisions = np.nan_to_num(TP / (TP + FP))
+            recalls = np.nan_to_num(TP / (TP + FN))
+            f1s = np.nan_to_num((2 * precisions * recalls) / (precisions + recalls))
+            supports = self.confusion_matrix.sum(axis=1)
+
         metrics = {}
-        TP_count = 0
-        FP_count = 0
-        FN_count = 0
-        precisions = []
-        recalls = []
-        f1s = []
-        supports = []
-        for cls in range(self.num_classes):
-            TP = self.confusion_matrix[cls, cls]
-            FP = self.confusion_matrix[cls, :].sum() - TP
-            FN = self.confusion_matrix[:, cls].sum() - TP
-            TN = self.confusion_matrix.sum() - (TP + FP + FN)
-
-            precision = TP / (TP + FP) if (TP + FP) != 0 else 0
-            recall = TP / (TP + FN) if (TP + FN) != 0 else 0
-            f1 = (
-                (2 * precision * recall) / (precision + recall)
-                if (precision + recall) != 0
-                else 0
-            )
-            support = int(self.confusion_matrix[:, cls].sum())
-            metrics[cls] = {
-                "precision": precision,
-                "recall": recall,
-                "f1": f1,
-                "support": support,
+        metrics.update(
+            {
+                cls_name: {
+                    "precision": precisions[k],
+                    "recall": recalls[k],
+                    "f1": f1s[k],
+                    "support": supports[k],
+                }
+                for k, cls_name in self.class_mapping.items()
             }
-
-            TP_count += TP
-            FP_count += FP
-            FN_count += FN
-            precisions.append(precision)
-            recalls.append(recall)
-            f1s.append(f1)
-            supports.append(support)
-
-        if self.class_mapping is not None:
-            metrics = {self.class_mapping[k]: v for k, v in metrics.items()}
-        micro_precision = TP_count / (TP_count + FP_count)
-        micro_recall = TP_count / (TP_count + FN_count)
-        micro_f1 = (2 * micro_precision * micro_recall) / (
-            micro_recall + micro_precision
         )
         metrics["micro"] = {
-            "precision": micro_precision,
-            "recall": micro_recall,
-            "f1": micro_f1,
+            "precision": TP.sum() / (TP.sum() + FP.sum()),
+            "recall": TP.sum() / (TP.sum() + FN.sum()),
+            "f1": (2 * TP.sum() / (2 * TP.sum() + FP.sum() + FN.sum())),
         }
-
-        def weighted(value, weights):
-            value, weights = np.array(value), np.array(weights)
-            return (value * weights).sum() / weights.sum()
 
         metrics["weighted"] = {
-            "precision": weighted(precisions, supports),
-            "recall": weighted(recalls, supports),
-            "f1": weighted(f1s, supports),
+            "precision": np.average(precisions, weights=supports),
+            "recall": np.average(recalls, weights=supports),
+            "f1": np.average(f1s, weights=supports),
         }
-
+        valid_weights = (supports > 0) * 1
+        metrics["macro"] = {
+            "precision": np.average(precisions, weights=valid_weights),
+            "recall": np.average(recalls, weights=valid_weights),
+            "f1": np.average(f1s, weights=valid_weights),
+        }
         return metrics
 
     def visualize_confusion_matrix(self, output_path: PathLike | str | None = None):
