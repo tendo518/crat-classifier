@@ -24,7 +24,7 @@ def gradient_for_angle(y: ArrayLike, x: ArrayLike):
     """
     y, x = np.array(y), np.array(x)
     grad1 = np.gradient(y, x)
-    y = (y + 90) % 360
+    y = np.mod(y + 90, 360)
     grad2 = np.gradient(y, x)
 
     return np.where(np.abs(grad1) > np.abs(grad2), grad2, grad1)
@@ -69,17 +69,14 @@ class MetricsAccumulator:
             supports = self.confusion_matrix.sum(axis=1)
 
         metrics = {}
-        metrics.update(
-            {
-                cls_name: {
-                    "precision": precisions[k],
-                    "recall": recalls[k],
-                    "f1": f1s[k],
-                    "support": supports[k],
-                }
-                for k, cls_name in self.class_mapping.items()
+        for k, cls_name in enumerate(self.class_mapping):
+            metrics[cls_name] = {
+                "precision": precisions[k],
+                "recall": recalls[k],
+                "f1": f1s[k],
+                "support": supports[k],
             }
-        )
+
         metrics["micro"] = {
             "precision": TP.sum() / (TP.sum() + FP.sum()),
             "recall": TP.sum() / (TP.sum() + FN.sum()),
@@ -100,21 +97,24 @@ class MetricsAccumulator:
         return metrics
 
     def visualize_confusion_matrix(self, output_path: PathLike | str | None = None):
-        classes_name = list(range(self.num_classes))
-        if self.class_mapping is not None:
-            classes_name = [self.class_mapping[i] for i in classes_name]
-        classes_name = [str(cls) for cls in classes_name]
-        plt.figure(figsize=(10, 10))
+        classes = [self.class_mapping[k] for k in sorted(self.class_mapping)]
         sns.heatmap(
             self.confusion_matrix,
-            xticklabels=classes_name,
-            yticklabels=classes_name,
+            annot=True,
             cmap="YlGnBu",
+            xticklabels=classes,
+            yticklabels=classes,
+            
         )
-        plt.xlabel("Ground Truth As")
-        plt.ylabel("Predicted As")
-        plt.title("confusion matrix")
-        if output_path is not None:
-            plt.savefig(output_path)
+        plt.title("Confusion Matrix")
+        plt.xlabel("Predicted Classes")
+        plt.ylabel("Actual Classes")
 
-        plt.show()
+        if output_path is not None:
+            try:
+                plt.savefig(output_path)
+                print(f"Visualization saved to {output_path}.")
+            except IOError as e:
+                print(f"Failed to save visualization to {output_path}: {e}")
+        else:
+            plt.show()
