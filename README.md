@@ -6,16 +6,17 @@
 conda create -n crat-classifier python=3.11 pip
 conda activate crat-classifier
 
+python -m venv .venv
 cd PATH/TO/PROJECT
 pip install -e .
 ```
 
 ## Usage
 
-1. Activate venv
+1. Activate conda env
 
     ```sh
-    source .venv/bin/activate
+    conda activate crat-classifier
     ```
 
 2. train model
