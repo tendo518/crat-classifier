@@ -1,11 +1,9 @@
-from .crat import CratTrajClassifier
 from .rnn import RNNClassifier
-from .seq2seq import EncoderDecoderClassifier
+from .st_gnn import STGraphyClassifier
 
 model_dict = {
     "rnn": RNNClassifier,
-    "crat": CratTrajClassifier,
-    "seq2seq": EncoderDecoderClassifier,
+    "st_gnn": STGraphyClassifier,
 }
 
 

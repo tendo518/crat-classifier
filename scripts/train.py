@@ -21,7 +21,7 @@ def main(configs: Config):
     if configs.experiment.seed is not None:
         seed_everything(configs.experiment.seed)
 
-    train_dataset = CSVDataset(configs.experiment.train_split, configs)
+    train_dataset = CSVDataset(configs.experiment.train_split)
     train_loader = DataLoader(
         train_dataset,
         batch_size=configs.experiment.batch_size,
@@ -31,7 +31,7 @@ def main(configs: Config):
         drop_last=True,
         shuffle=True,
     )
-    val_dataset = CSVDataset(configs.experiment.val_split, configs)
+    val_dataset = CSVDataset(configs.experiment.val_split)
     val_loader = DataLoader(
         val_dataset,
         batch_size=configs.experiment.batch_size,

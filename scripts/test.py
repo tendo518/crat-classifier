@@ -38,7 +38,7 @@ class TestConfig:
 
 
 def main(configs: TestConfig):
-    dataset = CSVDataset(configs.test_split, configs)
+    dataset = CSVDataset(configs.test_split)
     data_loader = DataLoader(
         dataset,
         batch_size=configs.batch_size,
@@ -79,6 +79,7 @@ def main(configs: TestConfig):
                 targets=batched_gts,
                 valid_mask=batched_valid_mask,
             )
+            print(batched_classes[0], batched_gts[0])
 
     metrics = metric_accul.calculate_metrics()
 
@@ -87,8 +88,9 @@ def main(configs: TestConfig):
             f"{metric_name}: {value:.4f}" for metric_name, value in metric.items()
         ]
         print(f"{cls}\n\t{" ".join(metric_str)}")
-    metric_accul.visualize_confusion_matrix()
+    metric_accul.visualize_confusion_matrix(output_path="vis.png")
 
 
 if __name__ == "__main__":
     main(tyro.cli(TestConfig))
+    

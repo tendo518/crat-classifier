@@ -10,6 +10,7 @@ from .base_model import BaseModelConfig
 class RNNClassifier(pl.LightningModule):
     @dataclass
     class ModelConfig(BaseModelConfig):
+        num_features: int = 11
         num_layers: int = 2
         hidden_sizes: int = 32
         dropout_ratio: float = 0.3
@@ -20,16 +21,19 @@ class RNNClassifier(pl.LightningModule):
 
         self.config = config
 
-        self.rnn_D = 2 if config.bidirection else 1
+        self.direction = 2 if config.bidirection else 1
         self.rnn = nn.GRU(
-            9,
+            config.num_features,
             hidden_size=config.hidden_sizes,
             num_layers=config.num_layers,
             batch_first=True,
             bidirectional=config.bidirection,
             dropout=config.dropout_ratio,
         )
-        self.linear = nn.Linear(config.hidden_sizes * self.rnn_D, config.num_classes)
+        self.linear = nn.Linear(
+            config.hidden_sizes * self.direction,
+            config.num_classes,
+        )
 
     def forward(self, batch):
         displ, centers = batch["displ"], batch["centers"]
@@ -38,7 +42,7 @@ class RNNClassifier(pl.LightningModule):
 
         hint = torch.stack(hint, dim=0).to(device=self.device)
         ego_displ = torch.stack([x[0] for x in displ], dim=0).to(device=self.device)
-        
+
         ego_displ_forward = torch.concat(
             (
                 torch.zeros((ego_displ.shape[0], 1, 4), device=self.device),
@@ -54,11 +58,11 @@ class RNNClassifier(pl.LightningModule):
             dim=1,
         )
 
-        feat_in = torch.concat((ego_displ_forward, ego_displ_backward), dim=-1)
-        feat_in = torch.concat((feat_in, hint.unsqueeze(-1)), dim=-1)
+        feat_in = torch.concat((ego_displ_forward, ego_displ_backward, hint), dim=-1)
+        # feat_in = torch.concat((feat_in, hint.unsqueeze(-1)), dim=-1)
         h0 = torch.randn(
             (
-                self.rnn_D * self.config.num_layers,
+                self.direction * self.config.num_layers,
                 feat_in.shape[0],
                 self.config.hidden_sizes,
             ),

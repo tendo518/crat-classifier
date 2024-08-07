@@ -110,27 +110,27 @@ class Classifier(pl.LightningModule):
             prog_bar=True,
             batch_size=batch_size,
         )
-        self.log(
-            "val/acc_ifallpredictisinlane",
-            torch.mean((masked_gts == 0).float()),
-            on_epoch=True,
-            batch_size=batch_size,
-        )
-        self.log(
-            "val/inlaneinpredict",
-            torch.mean((masked_preds == 0).float()),
-            on_epoch=True,
-            batch_size=batch_size,
-        )
+        # self.log(
+        #     "val/acc_ifallpredictisinlane",
+        #     torch.mean((masked_gts == 0).float()),
+        #     on_epoch=True,
+        #     batch_size=batch_size,
+        # )
+        # self.log(
+        #     "val/inlaneinpredict",
+        #     torch.mean((masked_preds == 0).float()),
+        #     on_epoch=True,
+        #     batch_size=batch_size,
+        # )
 
-        self.log(
-            "val/acc_exceptinlane",
-            torch.mean(
-                (masked_gts[masked_gts != 0] == masked_preds[masked_gts != 0]).float()
-            ),
-            on_epoch=True,
-            batch_size=batch_size,
-        )
+        # self.log(
+        #     "val/acc_exceptinlane",
+        #     torch.mean(
+        #         (masked_gts[masked_gts != 0] == masked_preds[masked_gts != 0]).float()
+        #     ),
+        #     on_epoch=True,
+        #     batch_size=batch_size,
+        # )
 
         # ego only
         pred = [x[0].detach().cpu().numpy() for x in out]
@@ -153,4 +153,22 @@ class MaskedCrossEntropyLoss(nn.Module):
         logits_masked = logits_flat[mask_flat]
         mask_targets = targets_flat[mask_flat]
         loss = F.cross_entropy(logits_masked, mask_targets, weight=self.weight)
+        return loss
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2, weight=None):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.weight = weight
+
+    def forward(self, input, target, mask):
+        """
+        input: [N, C], float32
+        target: [N, ], int64
+        """
+        logpt = F.log_softmax(input, dim=1)
+        pt = torch.exp(logpt)
+        logpt = (1 - pt) ** self.gamma * logpt
+        loss = F.nll_loss(logpt, target, self.weight)
         return loss
