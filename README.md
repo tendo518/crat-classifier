@@ -3,7 +3,7 @@
 ## Installation
 
 ```sh
-conda create -n crat-classifier python=3.12 pip
+conda create -n crat-classifier python=3.11 pip
 conda activate crat-classifier
 
 cd PATH/TO/PROJECT
