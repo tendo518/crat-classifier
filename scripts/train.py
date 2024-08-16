@@ -7,9 +7,10 @@ from crat_classifier.dataset.suscape_csv_dataset import CSVDataset
 from crat_classifier.trainer import Classifier
 from lightning.pytorch import seed_everything
 from lightning.pytorch.callbacks import (
-    LearningRateMonitor,
-    ModelCheckpoint,
     EarlyStopping,
+    LearningRateMonitor,
+    ModelSummary,
+    ModelCheckpoint,
 )
 from torch.utils.data import DataLoader
 
@@ -44,6 +45,7 @@ def main(configs: Config):
     callbacks = []
     callbacks.append(ModelCheckpoint(monitor="val/acc", save_top_k=5, mode="max"))
     callbacks.append(LearningRateMonitor(logging_interval="step"))
+    callbacks.append(ModelSummary(max_depth=2))
     if configs.experiment.early_stop:
         callbacks.append(EarlyStopping(monitor="val/acc", mode="max", patience=50))
 

@@ -93,4 +93,3 @@ def main(configs: TestConfig):
 
 if __name__ == "__main__":
     main(tyro.cli(TestConfig))
-    

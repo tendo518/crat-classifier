@@ -1,13 +1,10 @@
-from collections import Counter
-import glob
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
 import torch
-import torch.utils.data
 import torch.nn.functional as F
+import torch.utils.data
 
 """
 "9.9.9 Invalid"                             17450
@@ -185,7 +182,7 @@ suscape_label_classes = [
     # "2.1.2 StopAtYellowLight",
     "2.1.4 LeadVehicleStppoed",
     "2.1.5 PedestrianCrossing",
-    "2.1.8 VehiclesCrossing",
+    # "2.1.8 VehiclesCrossing",
     # "2.2.1 ArrowLightChanged",
     # "2.2.2 RoundLightChanged",
     "2.4.1 NoVehiclesAhead",
@@ -198,7 +195,7 @@ suscape_label_classes = [
     "2.6.2 WithLeadVehicle",
     "2.6.3 VehiclesCrossing",
     "2.7.1 NoVehiclesAhead",
-    # "2.7.3 VehiclesCrossing", 
+    # "2.7.3 VehiclesCrossing",
 ]
 suscape_invalid_hint = "9.9 Invalid"
 suscape_invalid_label = "9.9.9 Invalid"
@@ -283,7 +280,15 @@ class CSVDataset(torch.utils.data.Dataset):
 
         city = df["CITY_NAME"][0]
         timestamps = np.sort(np.unique(df["TIMESTAMP"].values))
-        trajs = np.stack([df["X"].values, df["Y"].values], axis=-1)
+        trajs = np.stack(
+            [
+                df["X"].values,
+                df["Y"].values,
+                df["V_X"].values,
+                df["V_Y"].values,
+            ],
+            axis=-1,
+        )
         obj_types = df["OBJECT_TYPE"].values
 
         ts2step = {ts: i for i, ts in enumerate(timestamps)}
@@ -300,12 +305,14 @@ class CSVDataset(torch.utils.data.Dataset):
 
         all_obj_trajs = []
         all_obj_types = []
+        all_obj_vels = []
         for obj_key in obj_keys:
             obj_indxs = objs2idx[obj_key]
             # # ignore quickly disappearred
             # if len(obj_indxs) < 8:
             #     continue
-            obj_trajs = trajs[obj_indxs]
+            obj_trajs = trajs[obj_indxs][:, :2]
+            obj_vels= trajs[obj_indxs][:, 2:4]
             obj_frames = steps[obj_indxs]
 
             # padding
@@ -313,10 +320,17 @@ class CSVDataset(torch.utils.data.Dataset):
             padded_obj_trajs[obj_frames, :2] = obj_trajs
             padded_obj_trajs[obj_frames, 2] = 1.0
             all_obj_trajs.append(padded_obj_trajs)
+
+            padded_obj_vels = np.zeros((40, 3))
+            padded_obj_vels[obj_frames, :2] = obj_vels
+            padded_obj_vels[obj_frames, 2] = 1.0
+            all_obj_vels.append(padded_obj_vels)
+
             all_obj_types.append(suscape_obj_type_mapping[obj_types[obj_indxs][0]])
 
         all_obj_trajs = np.array(all_obj_trajs, np.float32)
         all_obj_types = np.array(all_obj_types, np.int64)
+        all_obj_vels = np.array(all_obj_vels, np.float32)
         # res_gt = res_trajs[:, 20:].copy()
 
         # origin = res_trajs[0, 19, :2].copy()
@@ -379,7 +393,7 @@ class CSVDataset(torch.utils.data.Dataset):
             "centers": center,  # TODO: deprecated
             "obj_trajs": all_obj_trajs,
             "obj_types": all_obj_types,
-            "velocity": None,
+            "obj_vels": all_obj_vels,
         }
 
 

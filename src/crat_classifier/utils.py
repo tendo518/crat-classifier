@@ -8,6 +8,17 @@ from matplotlib import pyplot as plt
 from numpy.typing import ArrayLike
 
 
+def unique_with_index(x: torch.Tensor, dim=0):
+    # unique that reture index:
+    unique, inverse, counts = torch.unique(
+        x, dim=dim, sorted=True, return_inverse=True, return_counts=True
+    )
+    inv_sorted = inverse.argsort(stable=True)
+    tot_counts = torch.cat((counts.new_zeros(1), counts.cumsum(dim=0)))[:-1]
+    index = inv_sorted[tot_counts]
+    return unique, index
+
+
 def norm_stack(arr1, arr2):
     return np.linalg.norm(np.vstack((arr1, arr2)), ord=2, axis=0)
 
@@ -34,7 +45,7 @@ class MetricsAccumulator:
     def __init__(
         self,
         num_classes: int,
-        class_mapping: Optional[dict] = None,
+        class_mapping: dict | None = None,
     ):
         self.num_classes = num_classes
         self.class_mapping = (
@@ -104,7 +115,6 @@ class MetricsAccumulator:
             cmap="YlGnBu",
             xticklabels=classes,
             yticklabels=classes,
-            
         )
         plt.title("Confusion Matrix")
         plt.xlabel("Predicted Classes")

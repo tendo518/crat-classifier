@@ -1,5 +1,6 @@
 .pixi
-data*
+data
+data_old
 output
 output_*
 ckpts
